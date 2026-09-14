@@ -79,5 +79,8 @@ if [[ -d "$WORK_DIR/$APP" ]]; then
     open "$WORK_DIR/$APP" &
 fi
 
+# Step 6: Start the agent immediately (the LaunchAgent only fires at login)
+bash "$WORK_DIR/$EXECUTABLE" &
+
 # Final cleanup
 cleanup
